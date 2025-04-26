@@ -1,7 +1,5 @@
 // server/server.js
 
-app.use(cors());
-app.use(express.json()); // For parsing application/json
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -10,7 +8,11 @@ const { topics } = require('./topics');
 
 // Basic Setup
 const app = express();
+app.use(cors());
+app.use(express.json()); // 🚀 Allow JSON body parsing
+
 const server = http.createServer(app);
+
 const io = new Server(server, {
   cors: {
     origin: "*",
@@ -73,7 +75,6 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log(`User disconnected: ${socket.id}`);
 
-    // Find and remove player from their room
     for (const roomCode in rooms) {
       const playerIndex = rooms[roomCode].players.findIndex(p => p.id === socket.id);
 
@@ -81,13 +82,11 @@ io.on('connection', (socket) => {
         const wasHost = rooms[roomCode].players[playerIndex].isHost;
         rooms[roomCode].players.splice(playerIndex, 1);
 
-        // If the host left, promote first player if exists
         if (wasHost && rooms[roomCode].players.length > 0) {
           rooms[roomCode].players[0].isHost = true;
           console.log(`Host left. Promoted ${rooms[roomCode].players[0].name} as new host`);
         }
 
-        // If no players left, delete the room
         if (rooms[roomCode].players.length === 0) {
           delete rooms[roomCode];
           console.log(`Room ${roomCode} deleted (empty)`);
@@ -110,22 +109,21 @@ io.on('connection', (socket) => {
   // Host chooses a topic
   socket.on('choose_topic', ({ roomCode, topic }, callback) => {
     if (!rooms[roomCode]) return;
-  
+
     const availableSubjects = topics[topic];
     if (!availableSubjects) return callback({ error: "Invalid topic!" });
-  
+
     const chosenSubject = availableSubjects[Math.floor(Math.random() * availableSubjects.length)];
     const players = rooms[roomCode].players;
     const outPlayer = players[Math.floor(Math.random() * players.length)];
-  
+
     rooms[roomCode].chosenTopic = topic;
     rooms[roomCode].subject = chosenSubject;
     rooms[roomCode].outPlayer = outPlayer.id;
     rooms[roomCode].phase = "role_reveal";
-  
+
     console.log(`Topic chosen: ${topic}, Subject: ${chosenSubject}, Spy: ${outPlayer.name}`);
-  
-    // Privately send the subject or "out of topic" message
+
     players.forEach(p => {
       if (p.id === outPlayer.id) {
         io.to(p.id).emit('role_info', { isOut: true });
@@ -133,80 +131,75 @@ io.on('connection', (socket) => {
         io.to(p.id).emit('role_info', { isOut: false, subject: chosenSubject });
       }
     });
-  
+
     io.to(roomCode).emit('game_phase', { phase: "role_reveal" });
     callback({ success: true });
   });
-  
 
   // Players request next random pair
   socket.on('next_pair', ({ roomCode }) => {
     if (!rooms[roomCode]) return;
-  
+
     const players = rooms[roomCode].players;
     if (players.length < 2) return;
-  
+
     let p1 = players[Math.floor(Math.random() * players.length)];
     let p2 = players.filter(player => player.id !== p1.id)[Math.floor(Math.random() * (players.length - 1))];
-  
+
     io.to(roomCode).emit('new_pair', { asker: p1.name, answerer: p2.name });
   });
-  
+
   // Host starts the voting phase
   socket.on('start_voting', ({ roomCode }) => {
     if (!rooms[roomCode]) return;
-  
+
     rooms[roomCode].phase = "voting";
-  
+
     io.to(roomCode).emit('game_phase', { phase: "voting" });
   });
-
 
   // Store votes
   socket.on('submit_vote', ({ roomCode, votedFor }, callback) => {
     if (!rooms[roomCode]) return;
-  
+
     if (!rooms[roomCode].votes) {
       rooms[roomCode].votes = {};
     }
-  
+
     rooms[roomCode].votes[socket.id] = votedFor;
-  
+
     const totalVotes = Object.keys(rooms[roomCode].votes).length;
     const totalPlayers = rooms[roomCode].players.length;
-  
+
     console.log(`Vote received: ${socket.id} -> ${votedFor}`);
-  
-    // If everyone voted
+
     if (totalVotes === totalPlayers) {
       calculateVoting(roomCode);
     }
-  
+
     callback({ success: true });
   });
-  
-  // Helper function
+
   function calculateVoting(roomCode) {
     const room = rooms[roomCode];
     const voteCounts = {};
-  
+
     Object.values(room.votes).forEach(v => {
       voteCounts[v] = (voteCounts[v] || 0) + 1;
     });
-  
+
     let mostVoted = Object.keys(voteCounts).reduce((a, b) => voteCounts[a] > voteCounts[b] ? a : b, null);
     let correctSpyId = room.outPlayer;
-  
+
     const correctSpyName = room.players.find(p => p.id === correctSpyId)?.name;
     const mostVotedName = room.players.find(p => p.id === mostVoted)?.name;
-  
+
     const newScores = {};
     room.players.forEach(p => {
       newScores[p.name] = p.score || 0;
     });
-  
+
     if (mostVoted === correctSpyId) {
-      // Players voted correctly
       Object.keys(room.votes).forEach(voterId => {
         if (room.votes[voterId] === correctSpyId) {
           const voterName = room.players.find(p => p.id === voterId)?.name;
@@ -214,15 +207,14 @@ io.on('connection', (socket) => {
         }
       });
     } else {
-      // Spy wins
       const spyName = room.players.find(p => p.id === correctSpyId)?.name;
       newScores[spyName] += 5;
     }
-  
+
     room.scores = newScores;
-    room.phase = "spy-guess"; // Next phase
-    room.votes = {}; // reset for next round
-  
+    room.phase = "spy-guess";
+    room.votes = {};
+
     io.to(roomCode).emit('voting_result', {
       correctSpyName,
       mostVotedName,
@@ -233,50 +225,49 @@ io.on('connection', (socket) => {
   // Spy submits their guess
   socket.on('spy_guess', ({ roomCode, guess }, callback) => {
     if (!rooms[roomCode]) return;
-  
+
     const room = rooms[roomCode];
     const correctSubject = room.subject;
     const spyId = room.outPlayer;
-  
+
     if (!room.scores) {
       room.scores = {};
       room.players.forEach(p => room.scores[p.name] = 0);
     }
-  
+
     const spyName = room.players.find(p => p.id === spyId)?.name;
-  
+
     if (guess === correctSubject) {
       room.scores[spyName] += 15;
     }
-  
-    room.phase = "end_round"; // Move to end round
+
+    room.phase = "end_round";
+
     io.to(roomCode).emit('spy_guess_result', {
       correct: guess === correctSubject,
       correctSubject: correctSubject,
       scores: room.scores
     });
-  
+
     callback({ success: true });
   });
-  
+
   // Reset scores for a new game
   socket.on('reset_game', ({ roomCode }) => {
     if (!rooms[roomCode]) return;
-  
+
     rooms[roomCode].players.forEach(p => {
       p.score = 0;
     });
-  
+
     rooms[roomCode].phase = "lobby";
     delete rooms[roomCode].subject;
     delete rooms[roomCode].outPlayer;
     delete rooms[roomCode].scores;
     delete rooms[roomCode].votes;
-  
+
     io.to(roomCode).emit('room_update', rooms[roomCode]);
   });
-  
-  // (Later) Handle game start, topic choice, etc...
 });
 
 // Server start
@@ -284,3 +275,4 @@ const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+// End of server/server.js
