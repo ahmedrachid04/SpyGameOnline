@@ -1,5 +1,7 @@
 // server/server.js
 
+app.use(cors());
+app.use(express.json()); // For parsing application/json
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -11,8 +13,10 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*", // Allow frontend to connect during dev
-    methods: ["GET", "POST"]
+    origin: "*",
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type"],
+    credentials: true
   }
 });
 
