@@ -5,6 +5,7 @@ import { topics } from '../data/topics';
 const TopicSelectionPage = ({ roomCode, isHost, setPage, setChosenTopic }) => {
   const handleChooseTopic = (topic) => {
     socket.emit('choose_topic', { roomCode, topic }, (response) => {
+      console.log("Choose topic response:", response);
       if (response.error) {
         alert(response.error);
       } else {
