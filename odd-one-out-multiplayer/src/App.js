@@ -65,6 +65,7 @@ function App() {
           roomCode={roomCode}
           playerName={playerName}
           setPage={setPage}
+          isSpy={isSpy}
           />
           )}
           {page === "spy-guess" && (

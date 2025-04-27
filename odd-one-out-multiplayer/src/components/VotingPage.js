@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import socket from '../services/socket';
 
-const VotingPage = ({ roomCode, playerName, setPage }) => {
+const VotingPage = ({ roomCode, playerName, setPage, isSpy }) => {
   const [players, setPlayers] = useState([]);
   const [voted, setVoted] = useState(false);
 
