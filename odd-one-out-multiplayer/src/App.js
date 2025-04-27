@@ -17,6 +17,7 @@ function App() {
   const [playerName, setPlayerName] = useState("");
   const [isHost, setIsHost] = useState(false);
   const [chosenTopic, setChosenTopic] = useState("");
+  const [isSpy, setIsSpy] = useState(false);
 
 
   return (
@@ -49,6 +50,7 @@ function App() {
         <RoleRevealPage
           setPage={setPage}
           roomCode={roomCode}
+          setIsSpy={setIsSpy}
         />
       )}
       {page === "ask-answer" && (

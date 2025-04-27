@@ -1,16 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import socket from '../services/socket';
 
-const RoleRevealPage = ({ setPage, roomCode }) => {
+const RoleRevealPage = ({ setPage, roomCode, setIsSpy }) => {
   const [roleInfo, setRoleInfo] = useState(null);
 
   useEffect(() => {
     socket.emit('request_role_info', { roomCode });
   
     socket.on('role_info', (data) => {
-      console.log("Received role_info event:", data);
-      setRoleInfo(data);
-    });
+        console.log("Received role_info event:", data);
+        setRoleInfo(data);
+        setIsSpy(data.isOut); // 💥 SET GLOBAL isSpy
+      });
+      
   
     socket.on('game_phase', ({ phase }) => {
       if (phase === "ask-answer") {

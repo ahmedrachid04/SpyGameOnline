@@ -19,8 +19,11 @@ const VotingPage = ({ roomCode, playerName, setPage }) => {
       });
       
       socket.on('start_spy_guess', () => {
-        setPage("spy-guess"); // Only move if you're the spy
+        if (isSpy) {
+          setPage("spy-guess");
+        }
       });
+      
       
   
     // NEW:
