@@ -137,6 +137,23 @@ io.on('connection', (socket) => {
     callback({ success: true });
   });
 
+  socket.on('request_role_info', ({ roomCode }) => {
+    const room = rooms[roomCode];
+    if (!room) return;
+  
+    const player = room.players.find(p => p.id === socket.id);
+    if (!player) return;
+  
+    const isOut = room.outPlayer === socket.id;
+    const subject = room.subject;
+  
+    if (isOut) {
+      io.to(socket.id).emit('role_info', { isOut: true });
+    } else {
+      io.to(socket.id).emit('role_info', { isOut: false, subject });
+    }
+  });
+
   // Players request next random pair
   socket.on('next_pair', ({ roomCode }) => {
     if (!rooms[roomCode]) return;

@@ -1,25 +1,29 @@
 import React, { useEffect, useState } from 'react';
 import socket from '../services/socket';
 
-const RoleRevealPage = ({ setPage }) => {
+const RoleRevealPage = ({ setPage, roomCode }) => {
   const [roleInfo, setRoleInfo] = useState(null);
 
   useEffect(() => {
-    socket.once('role_info', (data) => {
-      console.log("Received role_info event (ONCE):", data);
+    socket.emit('request_role_info', { roomCode });
+  
+    socket.on('role_info', (data) => {
+      console.log("Received role_info event:", data);
       setRoleInfo(data);
     });
-
+  
     socket.on('game_phase', ({ phase }) => {
       if (phase === "ask-answer") {
         setPage("ask-answer");
       }
     });
-
+  
     return () => {
+      socket.off('role_info');
       socket.off('game_phase');
     };
-  }, [setPage]);
+  }, [setPage, roomCode]);
+  
 
   if (!roleInfo) return <div>Loading your secret info...</div>;
 

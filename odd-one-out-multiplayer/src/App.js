@@ -48,6 +48,7 @@ function App() {
       {page === "role-reveal" && (
         <RoleRevealPage
           setPage={setPage}
+          roomCode={roomCode}
         />
       )}
       {page === "ask-answer" && (
