@@ -177,11 +177,13 @@ io.on('connection', (socket) => {
   // Host starts the voting phase
   socket.on('start_voting', ({ roomCode }) => {
     if (!rooms[roomCode]) return;
-
+  
     rooms[roomCode].phase = "voting";
-
+  
     io.to(roomCode).emit('game_phase', { phase: "voting" });
+    io.to(roomCode).emit('room_update', rooms[roomCode]);
   });
+  
 
   // Store votes
   socket.on('submit_vote', ({ roomCode, votedFor }, callback) => {
