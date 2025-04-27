@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import socket from '../services/socket';
 import { topics } from '../data/topics';
 
@@ -9,11 +9,22 @@ const TopicSelectionPage = ({ roomCode, isHost, setPage, setChosenTopic }) => {
       if (response.error) {
         alert(response.error);
       } else {
-        setChosenTopic(topic); // ✅ NOW OK
-        // Topic chosen, wait for role reveal
+        setChosenTopic(topic);
       }
     });
   };
+
+  useEffect(() => {
+    socket.on('game_phase', ({ phase }) => {
+      if (phase === "role_reveal") {
+        setPage("role-reveal");
+      }
+    });
+
+    return () => {
+      socket.off('game_phase');
+    };
+  }, [setPage]);
 
   return (
     <div style={{ textAlign: 'center', marginTop: "50px" }}>
