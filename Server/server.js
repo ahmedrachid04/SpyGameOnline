@@ -135,6 +135,13 @@ io.on('connection', (socket) => {
 
     io.to(roomCode).emit('game_phase', { phase: "role_reveal" });
     callback({ success: true });
+    setTimeout(() => {
+        if (rooms[roomCode]) {
+          rooms[roomCode].phase = "ask-answer";
+          io.to(roomCode).emit('game_phase', { phase: "ask-answer" });
+          console.log(`Moved room ${roomCode} to ask-answer phase`);
+        }
+      }, 5000); // 5 seconds delay after role reveal
   });
 
   socket.on('request_role_info', ({ roomCode }) => {
