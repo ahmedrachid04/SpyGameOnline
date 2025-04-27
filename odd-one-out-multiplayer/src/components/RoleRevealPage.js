@@ -8,6 +8,7 @@ const RoleRevealPage = ({ setPage }) => {
 
   useEffect(() => {
     socket.on('role_info', (data) => {
+      console.log("Received role_info event:", data);  // ADD THIS LINE
       setRoleInfo(data);
     });
 
