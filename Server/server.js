@@ -125,6 +125,7 @@ io.on('connection', (socket) => {
     console.log(`Topic chosen: ${topic}, Subject: ${chosenSubject}, Spy: ${outPlayer.name}`);
 
     players.forEach(p => {
+        console.log(`Sending role_info to ${p.name} (ID: ${p.id})`);
       if (p.id === outPlayer.id) {
         io.to(p.id).emit('role_info', { isOut: true });
       } else {
