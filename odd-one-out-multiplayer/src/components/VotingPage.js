@@ -14,9 +14,14 @@ const VotingPage = ({ roomCode, playerName, setPage }) => {
     });
   
     socket.on('voting_result', ({ correctSpyName, mostVotedName, scores }) => {
-      alert(`Voting Results:\nMost Voted: ${mostVotedName}\nActual Spy: ${correctSpyName}`);
-      setPage("spy-guess");
-    });
+        alert(`Voting Results:\nMost Voted: ${mostVotedName}\nActual Spy: ${correctSpyName}`);
+        // STAY on voting page! Do not move yet.
+      });
+      
+      socket.on('start_spy_guess', () => {
+        setPage("spy-guess"); // Only move if you're the spy
+      });
+      
   
     // NEW:
     socket.emit('request_room_info', { roomCode });

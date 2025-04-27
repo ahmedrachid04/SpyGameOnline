@@ -7,15 +7,23 @@ const LeaderboardPage = ({ roomCode, setPage, setChosenTopic }) => {
   const [scores, setScores] = useState({});
 
   useEffect(() => {
-    // Optional: Fetch updated scores when entering leaderboard
     socket.on('spy_guess_result', ({ scores }) => {
       setScores(scores);
     });
-
+  
+    socket.on('update_scores', ({ scores }) => {
+      setScores(scores);
+    });
+  
+    // NEW: Request the scores when page loads
+    socket.emit('request_scores', { roomCode });
+  
     return () => {
       socket.off('spy_guess_result');
+      socket.off('update_scores');
     };
-  }, []);
+  }, [roomCode]);
+  
 
   const startNewGame = () => {
     // Emit a special "reset_game" event (we'll add it in backend next)

@@ -242,11 +242,16 @@ io.on('connection', (socket) => {
     room.phase = "spy-guess";
     room.votes = {};
 
+    // First, tell everyone the voting results
     io.to(roomCode).emit('voting_result', {
-      correctSpyName,
-      mostVotedName,
-      scores: newScores,
-    });
+    correctSpyName,
+    mostVotedName,
+    scores: newScores,
+});
+  
+  // Then, ONLY tell the spy to move to guessing phase
+  io.to(correctSpyId).emit('start_spy_guess');
+  
   }
 
   // Spy submits their guess
@@ -300,6 +305,13 @@ io.on('connection', (socket) => {
 
     io.to(roomCode).emit('room_update', rooms[roomCode]);
   });
+
+  socket.on('request_scores', ({ roomCode }) => {
+    if (!rooms[roomCode]) return;
+  
+    io.to(socket.id).emit('update_scores', { scores: rooms[roomCode].scores || {} });
+  });
+  
 });
 
 // Server start
