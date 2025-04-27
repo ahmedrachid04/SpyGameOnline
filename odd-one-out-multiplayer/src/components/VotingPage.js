@@ -9,19 +9,24 @@ const VotingPage = ({ roomCode, playerName, setPage }) => {
 
   useEffect(() => {
     socket.on('room_update', (roomData) => {
+      console.log("room update", roomData);
       setPlayers(roomData.players);
     });
-
+  
     socket.on('voting_result', ({ correctSpyName, mostVotedName, scores }) => {
       alert(`Voting Results:\nMost Voted: ${mostVotedName}\nActual Spy: ${correctSpyName}`);
-      setPage("spy-guess"); // Move to Spy Guess phase after voting
+      setPage("spy-guess");
     });
-
+  
+    // NEW:
+    socket.emit('request_room_info', { roomCode });
+  
     return () => {
       socket.off('room_update');
       socket.off('voting_result');
     };
-  }, [setPage]);
+  }, [setPage, roomCode]);
+  
 
   const submitVote = (votedForId) => {
     socket.emit('submit_vote', { roomCode, votedFor: votedForId }, (response) => {

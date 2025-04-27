@@ -279,6 +279,11 @@ io.on('connection', (socket) => {
     callback({ success: true });
   });
 
+  socket.on('request_room_info', ({ roomCode }) => {
+    if (!rooms[roomCode]) return;
+    io.to(socket.id).emit('room_update', rooms[roomCode]);
+  });
+  
   // Reset scores for a new game
   socket.on('reset_game', ({ roomCode }) => {
     if (!rooms[roomCode]) return;
